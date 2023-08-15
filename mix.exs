@@ -69,7 +69,8 @@ defmodule DetsPlus.MixProject do
       {:dialyxir, "~> 1.2", only: [:dev], runtime: false},
       {:cubdb, "~> 2.0", only: [:dev], runtime: false},
       {:benchee, "~> 1.1", only: :dev, runtime: false},
-      {:paged_file, "~> 1.1"}
+      {:paged_file, "~> 1.1"},
+      {:blake3, "1.0.1"}
       # {:paged_file, path: "../paged_file"}
     ]
   end

@@ -85,6 +85,17 @@ defmodule DetsPlus do
     ]
   end
 
+  @doc false
+  def start_link(args) do
+    {:ok, dets} = DetsPlus.open_file(args[:name], args)
+    {:ok, dets.pid}
+  end
+
+  def start_link(_, args) do
+    {:ok, dets} = DetsPlus.open_file(args[:name], args)
+    {:ok, dets.pid}
+  end
+
   @doc """
     Opens an existing table or creates a new table. If no
     `file` argument is provided the table name will be used.
@@ -353,6 +364,13 @@ defmodule DetsPlus do
     Enum.reduce(dets, acc, fun)
   end
 
+  @spec all(atom | pid) :: list
+  def all(pid) do
+    call(pid, :get_handle)
+    |> Stream.map(fn x -> x end)
+    |> Enum.to_list()
+  end
+
   @doc """
   Returns a list of all objects with key Key stored in the table.
 
@@ -571,7 +589,7 @@ defmodule DetsPlus do
       if fallback_memory > auto_save_memory do
         # this pause exists to protect from out_of_memory situations when the writer can't
         # finish in time
-        Logger.warn(
+        Logger.warning(
           "State flush slower than new inserts - pausing writes until flush is complete"
         )
 
@@ -937,7 +955,7 @@ defmodule DetsPlus do
             FileWriter.write(
               writer,
               <<entry_hash::binary-size(@hash_size), size::unsigned-size(@entry_size_size_bits),
-                entry_bin::binary()>>
+                entry_bin::binary>>
             )
 
           {:cont, {state, writer}}
@@ -957,7 +975,7 @@ defmodule DetsPlus do
   _ =
     Enum.reduce(1..56, {[], 2}, fn bits, {code, size} ->
       next =
-        defp slot_idx(unquote(size), <<_, slot::unsigned-size(unquote(bits)), _::bitstring()>>) do
+        defp slot_idx(unquote(size), <<_, slot::unsigned-size(unquote(bits)), _::bitstring>>) do
           slot
         end
 
@@ -1351,14 +1369,13 @@ defmodule DetsPlus do
   end
 
   defp default_hash(key) do
-    <<hash::binary-size(@hash_size), _::binary()>> =
-      :crypto.hash(:sha256, :erlang.term_to_binary(key))
-
+    # :crypto.hash(:sha256, :erlang.term_to_binary(key))
+    <<hash::binary-size(@hash_size), _::binary>> = Blake3.hash(:erlang.term_to_binary(key))
     hash
   end
 
   # get a table idx from the hash value
-  defp table_idx(<<idx, _::binary()>>) do
+  defp table_idx(<<idx, _::binary>>) do
     idx
   end
 
