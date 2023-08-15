@@ -70,7 +70,7 @@ defmodule DetsPlus.MixProject do
       {:cubdb, "~> 2.0", only: [:dev], runtime: false},
       {:benchee, "~> 1.1", only: :dev, runtime: false},
       {:paged_file, "~> 1.1"},
-      {:blake3, "1.0.1"}
+      {:blake3, git: "https://kabei@github.com/kabei/blake3.git", branch: "master"}
       # {:paged_file, path: "../paged_file"}
     ]
   end
