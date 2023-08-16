@@ -71,7 +71,6 @@ defmodule DetsPlus.MixProject do
       {:benchee, "~> 1.1", only: :dev, runtime: false},
       {:paged_file, "~> 1.1"},
       {:blake3, git: "https://kabei@github.com/kabei/blake3.git", branch: "master"}
-      # {:paged_file, path: "../paged_file"}
     ]
   end
 end

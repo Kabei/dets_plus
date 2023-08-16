@@ -55,7 +55,7 @@ defmodule DetsPlus do
     @moduledoc false
     @enforce_keys [:version]
     defstruct [
-      :auto_save_memory,
+      # :auto_save_memory,
       :auto_save,
       :bloom_size,
       :bloom,
@@ -74,7 +74,7 @@ defmodule DetsPlus do
       :mode,
       :name,
       :slot_counts,
-      :sync_fallback_memory,
+      # :sync_fallback_memory,
       :sync_fallback,
       :sync_waiters,
       :sync,
@@ -111,7 +111,7 @@ defmodule DetsPlus do
     filename = Keyword.get(args, :file, name) |> do_string()
 
     # amount of memory to use max before a flush is enforced
-    auto_save_memory = Keyword.get(args, :auto_save_memory, 1_000_000_000)
+    # auto_save_memory = Keyword.get(args, :auto_save_memory, 1_000_000_000)
     auto_save = Keyword.get(args, :auto_save, 180_000)
     page_cache_memory = Keyword.get(args, :page_cache_memory, 1_000_000_000)
     mode = Keyword.get(args, :access, :read_write)
@@ -147,8 +147,8 @@ defmodule DetsPlus do
             file_size: 0,
             sync: nil,
             sync_waiters: [],
-            sync_fallback: %{},
-            sync_fallback_memory: 0
+            sync_fallback: %{}
+            # sync_fallback_memory: 0
           }
       end
       |> init_hashfuns()
@@ -156,7 +156,7 @@ defmodule DetsPlus do
     # These properties should override what is stored on disk
     state = %State{
       state
-      | auto_save_memory: auto_save_memory,
+      | # auto_save_memory: auto_save_memory,
         auto_save: auto_save,
         mode: mode,
         page_cache_memory: page_cache_memory
@@ -210,8 +210,8 @@ defmodule DetsPlus do
 
     %State{state | bloom: bloom}
     |> Map.put(:ets_memory, 0)
-    |> Map.put(:sync_fallback_memory, 0)
-    |> Map.put(:auto_save_memory, nil)
+    # |> Map.put(:sync_fallback_memory, 0)
+    # |> Map.put(:auto_save_memory, nil)
     |> Map.put(:page_cache_memory, nil)
   end
 
@@ -554,50 +554,50 @@ defmodule DetsPlus do
   # this needs to be configured...
   def handle_call(
         {:insert, objects},
-        from,
+        _from,
         state = %State{
           ets: ets,
           ets_memory: ets_memory,
-          sync: sync,
-          sync_fallback: fallback,
-          sync_fallback_memory: fallback_memory,
-          sync_waiters: sync_waiters,
-          auto_save_memory: auto_save_memory
+          sync: sync
+          # sync_fallback: fallback,
+          # sync_fallback_memory: fallback_memory,
+          # sync_waiters: sync_waiters,
+          # auto_save_memory: auto_save_memory
         }
       ) do
-    if sync == nil do
-      :ets.insert(ets, objects)
-      ets_memory = ets_memory + estimate_size(objects)
+    # if sync == nil do
+    :ets.insert(ets, objects)
+    ets_memory = ets_memory + estimate_size(objects)
 
-      sync =
-        sync ||
-          if ets_memory > auto_save_memory do
-            spawn_sync_worker(state)
-          end
+    # sync =
+    #   sync ||
+    #     if ets_memory > auto_save_memory do
+    #       spawn_sync_worker(state)
+    #     end
 
-      state = %State{state | ets_memory: ets_memory, sync: sync}
-      {:reply, :ok, state}
-    else
-      fallback =
-        Enum.reduce(objects, fallback, fn {key, object}, fallback ->
-          Map.put(fallback, key, object)
-        end)
+    state = %State{state | ets_memory: ets_memory, sync: sync}
+    {:reply, :ok, state}
+    # else
+    #   fallback =
+    #     Enum.reduce(objects, fallback, fn {key, object}, fallback ->
+    #       Map.put(fallback, key, object)
+    #     end)
 
-      fallback_memory = fallback_memory + estimate_size(objects)
-      state = %State{state | sync_fallback: fallback, sync_fallback_memory: fallback_memory}
+    #   fallback_memory = fallback_memory + estimate_size(objects)
+    #   state = %State{state | sync_fallback: fallback, sync_fallback_memory: fallback_memory}
 
-      if fallback_memory > auto_save_memory do
-        # this pause exists to protect from out_of_memory situations when the writer can't
-        # finish in time
-        Logger.warning(
-          "State flush slower than new inserts - pausing writes until flush is complete"
-        )
+    # if fallback_memory > auto_save_memory do
+    #   # this pause exists to protect from out_of_memory situations when the writer can't
+    #   # finish in time
+    #   Logger.warning(
+    #     "State flush slower than new inserts - pausing writes until flush is complete"
+    #   )
 
-        {:noreply, %State{state | sync_waiters: [from | sync_waiters]}}
-      else
-        {:reply, :ok, state}
-      end
-    end
+    #   {:noreply, %State{state | sync_waiters: [from | sync_waiters]}}
+    # else
+    {:reply, :ok, state}
+    # end
+    # end
   end
 
   def handle_call({:insert_new, objects}, from, state) do
@@ -727,7 +727,7 @@ defmodule DetsPlus do
        | fp: fp,
          sync: nil,
          sync_fallback: %{},
-         sync_fallback_memory: 0,
+         #  sync_fallback_memory: 0,
          sync_waiters: [],
          ets_memory: estimate_size(fallback)
      }}
